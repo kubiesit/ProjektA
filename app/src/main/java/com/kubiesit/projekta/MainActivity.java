@@ -1,52 +1,93 @@
 package com.kubiesit.projekta;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
+    Button geoButton;
+    private LocationManager locationManager;
+    private String provider;
+    private MyLocationListener mylistener;
+    private Criteria criteria;
+    private MediaPlayer mp;
+
+    @SuppressLint("NewApi")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        GetControls();
+        geoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                try {
+                    locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    Criteria criteria = new Criteria();
+                    criteria.setPowerRequirement(Criteria.POWER_LOW); // Chose your desired power consumption level.
+                    criteria.setAccuracy(Criteria.ACCURACY_FINE); // Choose your accuracy requirement.
+                    criteria.setSpeedRequired(true); // Chose if speed for first location fix is required.
+                    criteria.setAltitudeRequired(true); // Choose if you use altitude.
+                    criteria.setBearingRequired(false); // Choose if you use bearing.
+                    criteria.setCostAllowed(true); // Choose if this provider can waste money :-)
+
+                    provider = LocationManager.NETWORK_PROVIDER;
+                    // the last known location of this provider
+                    Location location = locationManager.getLastKnownLocation(provider);
+
+                    String lati = "" + location.getLatitude();
+                    String longti = "" + location.getLongitude();
+                    Toast.makeText(getApplicationContext(), lati + "\n" + longti, Toast.LENGTH_LONG).show();
+                } catch (Exception ex) {
+                    Toast.makeText(getApplicationContext(), ex.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    private void GetControls() {
+        geoButton = findViewById(R.id.getGeoButton);
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+    class MyLocationListener implements LocationListener {
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        @Override
+        public void onLocationChanged(Location location) {
+            // Initialize the location fields
+            Toast.makeText(MainActivity.this, "" + location.getLatitude() + location.getLongitude(),
+                    Toast.LENGTH_SHORT).show();
         }
 
-        return super.onOptionsItemSelected(item);
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+            Toast.makeText(MainActivity.this, provider + "'s status changed to " + status + "!",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            Toast.makeText(MainActivity.this, "Provider " + provider + " enabled!",
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Toast.makeText(MainActivity.this, "Provider " + provider + " disabled!",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 }
+
